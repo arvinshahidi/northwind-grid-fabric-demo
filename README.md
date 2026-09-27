@@ -8,6 +8,15 @@ This is a **DEMO**, not a production EMS/ADMS. There is no closed-loop
 control of breakers. Every automated action is labeled "recommended" and
 requires human approval.
 
+## Reference architecture
+
+![Energy grid management reference architecture](fabric/architecture/energy-grid-reference-architecture.png)
+
+This demo mirrors the four phases of Microsoft's reference architecture
+above (ingest/process, analyze/enrich, train, visualize/activate) — see
+`fabric/FABRIC_DEMO_STORY.md` for how each numbered step in the diagram
+maps to a concrete artifact in this repo.
+
 ## The utility: Northwind Grid
 
 A synthetic Pacific Northwest regional utility, seeded deterministically
