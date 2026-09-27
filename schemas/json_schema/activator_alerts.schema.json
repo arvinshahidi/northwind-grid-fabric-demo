@@ -1,0 +1,92 @@
+{
+  "properties": {
+    "alert_id": {
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "rule_id": {
+      "title": "Rule Id",
+      "type": "string"
+    },
+    "severity": {
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "scope_type": {
+      "enum": [
+        "grid",
+        "region",
+        "substation",
+        "feeder",
+        "asset"
+      ],
+      "title": "Scope Type",
+      "type": "string"
+    },
+    "scope_id": {
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "metric": {
+      "title": "Metric",
+      "type": "string"
+    },
+    "value": {
+      "title": "Value",
+      "type": "number"
+    },
+    "threshold": {
+      "title": "Threshold",
+      "type": "number"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "recommended_action": {
+      "title": "Recommended Action",
+      "type": "string"
+    },
+    "human_approval_required": {
+      "default": true,
+      "title": "Human Approval Required",
+      "type": "boolean"
+    },
+    "status": {
+      "default": "open",
+      "enum": [
+        "open",
+        "approved",
+        "dismissed"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "alert_id",
+    "event_time_utc",
+    "rule_id",
+    "severity",
+    "scope_type",
+    "scope_id",
+    "metric",
+    "value",
+    "threshold",
+    "message",
+    "recommended_action"
+  ],
+  "title": "activator_alerts",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/activator_alerts.json"
+}

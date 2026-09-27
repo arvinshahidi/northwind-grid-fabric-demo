@@ -1,0 +1,57 @@
+// phase2_enrichment.kql
+// PHASE 2 (native): contextualize generation with ERP, contextualize
+// consumption with CRM -- done entirely inside the Eventhouse via update
+// policies, NOT by local Python. Run this once against your Eventhouse
+// after create_tables.kql. From then on, every row landing in
+// generation_telemetry / meter_telemetry is automatically enriched in
+// real time by Fabric itself.
+//
+// Microsoft steps this feeds: 5 (contextualize generation with ERP),
+// 7 (contextualize consumption with CRM, correlate with generation).
+
+// ---------- generation_telemetry -> generation_telemetry_enriched ----------
+
+.create-or-alter function with (folder = "northwind_grid/phase2") EnrichGeneration() {
+    generation_telemetry
+    | lookup kind=leftouter (
+        erp_assets
+        | summarize arg_max(as_of_utc, nameplate_mw, name, oem, install_year, feeder_id, next_maintenance) by asset_id
+        | project asset_id, nameplate_mw, asset_name = name, oem, install_year, feeder_id, next_maintenance
+      ) on asset_id
+}
+
+.create table generation_telemetry_enriched (
+    event_id: string, event_time_utc: datetime, event_time_local: datetime, asset_id: string,
+    asset_type: string, farm_or_plant_id: string, region_id: string, substation_id: string,
+    active_power_mw: real, reactive_power_mvar: real, voltage_kv: real, frequency_hz: real,
+    availability_pct: real, status: string, wind_speed_ms: real, irradiance_wm2: real,
+    soc_pct: real, curtailment_mw: real, setpoint_mw: real,
+    nameplate_mw: real, asset_name: string, oem: string, install_year: int,
+    feeder_id: string, next_maintenance: string
+)
+
+.alter table generation_telemetry_enriched policy update
+@'[{"IsEnabled": true, "Source": "generation_telemetry", "Query": "EnrichGeneration()", "IsTransactional": false, "PropagateIngestionProperties": false}]'
+
+// ---------- meter_telemetry -> meter_telemetry_enriched ----------
+
+.create-or-alter function with (folder = "northwind_grid/phase2") EnrichMeter() {
+    meter_telemetry
+    | lookup kind=leftouter (
+        crm_context
+        | summarize arg_max(event_time_utc, customer_id, rate_class, medical_baseline, critical_facility, account_status) by meter_id
+        | project meter_id, customer_id, rate_class, medical_baseline, critical_facility, account_status
+      ) on meter_id
+}
+
+.create table meter_telemetry_enriched (
+    event_id: string, event_time_utc: datetime, event_time_local: datetime, meter_id: string,
+    feeder_id: string, substation_id: string, region_id: string, active_power_kw: real,
+    voltage_v: real, current_a: real, power_factor: real, energy_kwh_delta: real,
+    voltage_violation: bool, last_gasp: bool, restoration: bool, quality_flag: string,
+    customer_id: string, rate_class: string, medical_baseline: bool, critical_facility: bool,
+    account_status: string
+)
+
+.alter table meter_telemetry_enriched policy update
+@'[{"IsEnabled": true, "Source": "meter_telemetry", "Query": "EnrichMeter()", "IsTransactional": false, "PropagateIngestionProperties": false}]'

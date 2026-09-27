@@ -1,0 +1,16 @@
+// live_balance.kql
+// Feeds the Grid Overview real-time dashboard tile: grid-wide supply vs
+// demand, reserve margin and frequency proxy. Not tied to a single
+// Activator rule -- this is the always-on situational awareness view
+// (Microsoft step 6: "aggregate generation picture").
+
+let window = 2m;
+grid_telemetry
+| where element_type == "substation"
+| summarize load_mw = avg(load_mw), gen_mw = avg(generation_in_mw),
+            frequency_hz = avg(frequency_hz)
+    by element_id, bin(event_time_utc, window)
+| summarize load_mw = sum(load_mw), gen_mw = sum(gen_mw), frequency_hz = avg(frequency_hz)
+    by event_time_utc
+| extend reserve_margin_pct = (gen_mw - load_mw) / load_mw * 100.0
+| order by event_time_utc desc

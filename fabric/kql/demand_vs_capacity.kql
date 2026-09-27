@@ -1,0 +1,16 @@
+// demand_vs_capacity.kql
+// Feeds Activator rule RULE-DEMAND-90: "Demand exceeds 90% of available
+// capacity". Also answers the canned Copilot question:
+//   "Available peaker headroom vs reserve margin" (see peaker_headroom
+//   section below).
+//
+// NATIVE scoring: calls AvailableCapacityNow() defined in
+// phase3_native_scoring.kql, which computes available capacity live from
+// ERP nameplate data joined with the current on/offline status of every
+// generator -- no externally pre-computed grid_summary required.
+
+AvailableCapacityNow()
+| where demand_pct_of_capacity > 90.0
+
+// ---------- peaker headroom (Copilot question) ----------
+PeakerHeadroomNow()

@@ -1,0 +1,62 @@
+// create_tables.kql
+// Eventhouse table + mapping definitions for the Northwind Grid streams.
+// Property names match schemas/models.py exactly so no rewrite is needed
+// when swapping the local bus for a real Fabric Eventstream.
+
+.create table generation_telemetry (
+    event_id: string, event_time_utc: datetime, event_time_local: datetime,
+    asset_id: string, asset_type: string, farm_or_plant_id: string,
+    region_id: string, substation_id: string,
+    active_power_mw: real, reactive_power_mvar: real, voltage_kv: real, frequency_hz: real,
+    availability_pct: real, status: string,
+    wind_speed_ms: real, irradiance_wm2: real, soc_pct: real,
+    curtailment_mw: real, setpoint_mw: real
+)
+
+.create table grid_telemetry (
+    event_id: string, event_time_utc: datetime, event_time_local: datetime,
+    element_id: string, element_type: string, region_id: string,
+    load_mw: real, generation_in_mw: real, loading_pct: real, voltage_kv: real,
+    frequency_hz: real, unbalance_pct: real, status: string
+)
+
+.create table meter_telemetry (
+    event_id: string, event_time_utc: datetime, event_time_local: datetime,
+    meter_id: string, feeder_id: string, substation_id: string, region_id: string,
+    active_power_kw: real, voltage_v: real, current_a: real, power_factor: real,
+    energy_kwh_delta: real, voltage_violation: bool, last_gasp: bool, restoration: bool,
+    quality_flag: string
+)
+
+.create table crm_context (
+    event_time_utc: datetime, meter_id: string, customer_id: string, address: string,
+    postal_code: string, lat: real, lon: real, rate_class: string,
+    medical_baseline: bool, critical_facility: bool, feeder_id: string, account_status: string
+)
+
+.create table erp_assets (
+    as_of_utc: datetime, asset_id: string, asset_type: string, name: string,
+    nameplate_mw: real, voltage_kv: real, region_id: string, substation_id: string,
+    feeder_id: string, lat: real, lon: real, install_year: int,
+    last_maintenance: string, next_maintenance: string, status: string, oem: string
+)
+
+.create table weather_observations (
+    event_time_utc: datetime, region_id: string, temp_c: real, wind_speed_ms: real,
+    wind_dir_deg: real, ghi_wm2: real, cloud_cover_pct: real, precip_mm_h: real, alert: string
+)
+
+.create table predictions (
+    event_time_utc: datetime, horizon_minutes: int, scope_type: string, scope_id: string,
+    demand_mw_p50: real, generation_mw_p50: real, deficit_mw: real, deficit_pct: real,
+    reserve_margin_pct: real, spike_probability: real, model_version: string
+)
+
+.create table activator_alerts (
+    alert_id: string, event_time_utc: datetime, rule_id: string, severity: string,
+    scope_type: string, scope_id: string, metric: string, value: real, threshold: real,
+    message: string, recommended_action: string, human_approval_required: bool, status: string
+)
+
+// Update policies / ingestion mapping would be added per Eventstream binding.
+// See FABRIC_WIRING.md for the Eventstream -> Eventhouse shortcut steps.

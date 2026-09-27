@@ -1,0 +1,98 @@
+{
+  "properties": {
+    "as_of_utc": {
+      "title": "As Of Utc",
+      "type": "string"
+    },
+    "asset_id": {
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "asset_type": {
+      "enum": [
+        "wind_turbine",
+        "solar_farm",
+        "gas_peaker",
+        "hydro",
+        "bess",
+        "biomass"
+      ],
+      "title": "Asset Type",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "nameplate_mw": {
+      "title": "Nameplate Mw",
+      "type": "number"
+    },
+    "voltage_kv": {
+      "title": "Voltage Kv",
+      "type": "number"
+    },
+    "region_id": {
+      "title": "Region Id",
+      "type": "string"
+    },
+    "substation_id": {
+      "title": "Substation Id",
+      "type": "string"
+    },
+    "feeder_id": {
+      "title": "Feeder Id",
+      "type": "string"
+    },
+    "lat": {
+      "title": "Lat",
+      "type": "number"
+    },
+    "lon": {
+      "title": "Lon",
+      "type": "number"
+    },
+    "install_year": {
+      "title": "Install Year",
+      "type": "integer"
+    },
+    "last_maintenance": {
+      "title": "Last Maintenance",
+      "type": "string"
+    },
+    "next_maintenance": {
+      "title": "Next Maintenance",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "oem": {
+      "title": "Oem",
+      "type": "string"
+    }
+  },
+  "required": [
+    "as_of_utc",
+    "asset_id",
+    "asset_type",
+    "name",
+    "nameplate_mw",
+    "voltage_kv",
+    "region_id",
+    "substation_id",
+    "feeder_id",
+    "lat",
+    "lon",
+    "install_year",
+    "last_maintenance",
+    "next_maintenance",
+    "status",
+    "oem"
+  ],
+  "title": "erp_assets",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/erp_assets.json"
+}

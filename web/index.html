@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Northwind Grid - Real-Time Intelligence Control Room</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0e14; --panel: #121924; --panel2: #0d1420; --border: #1e2a3a;
+    --text: #dfe6ee; --muted: #7a8a9a; --accent: #7fd1ff;
+    --green: #57e389; --yellow: #f9c74f; --red: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ---------- shell layout ---------- */
+  #shell { display: grid; grid-template-columns: 280px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+  header {
+    grid-column: 1 / 3; display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px; background: var(--panel2); border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 19px; margin: 0; color: var(--accent); }
+  header .tag { font-size: 12px; color: var(--muted); }
+  header .phase-badges { margin-left: auto; display: flex; gap: 6px; }
+  .phase-badge {
+    font-size: 11px; padding: 4px 9px; border-radius: 12px; border: 1px solid var(--border);
+    color: var(--muted); background: var(--panel);
+  }
+  .phase-badge.active { color: var(--accent); border-color: var(--accent); background: #10222c; }
+
+  /* ---------- story sidebar ---------- */
+  aside {
+    background: var(--panel2); border-right: 1px solid var(--border);
+    padding: 16px 12px; overflow-y: auto;
+  }
+  aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 4px 8px 10px; }
+  .story-step {
+    display: flex; gap: 10px; padding: 10px 10px; border-radius: 8px; cursor: pointer;
+    margin-bottom: 6px; border: 1px solid transparent; transition: background .1s;
+  }
+  .story-step:hover { background: #16202c; }
+  .story-step.active { background: #10222c; border-color: var(--accent); }
+  .story-step.done .num { background: #1a3a2a; color: var(--green); }
+  .story-step .num {
+    width: 24px; height: 24px; border-radius: 50%; background: #1a2634; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; margin-top: 1px;
+  }
+  .story-step.active .num { background: var(--accent); color: #06222c; }
+  .story-step .title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .story-step .sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  aside .sim-controls { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+  aside .sim-controls .row { display: flex; gap: 6px; margin-bottom: 8px; }
+  aside select, aside input[type=text], aside input[type=number] {
+    background: var(--panel); border: 1px solid #2a3b4d; color: var(--text); border-radius: 5px;
+    padding: 6px 8px; font-size: 12px; width: 100%;
+  }
+  aside button.action {
+    background: var(--panel); border: 1px solid #2a3b4d; color: var(--text); border-radius: 5px;
+    padding: 6px 8px; font-size: 12px; cursor: pointer; flex: 1;
+  }
+  aside button.action:hover { border-color: var(--accent); color: var(--accent); }
+  aside button.primary { background: #12324a; border-color: var(--accent); color: var(--accent); }
+  #clockLabel { font-size: 11px; color: var(--muted); margin-top: 8px; display:block; }
+
+  /* ---------- main content ---------- */
+  main { padding: 18px 22px; overflow-y: auto; }
+  .narrative-banner {
+    background: linear-gradient(135deg, #0f1e2a, #0d1622); border: 1px solid #234055; border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 18px;
+  }
+  .narrative-banner .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); margin-bottom: 4px; }
+  .narrative-banner .text { font-size: 14px; line-height: 1.5; color: #cfe0ee; }
+
+  nav#tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  nav#tabs button {
+    background: none; border: none; color: var(--muted); padding: 9px 14px; cursor: pointer;
+    font-size: 13px; border-bottom: 2px solid transparent;
+  }
+  nav#tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .section-head { margin: 4px 0 12px; }
+  .section-head h3 { margin: 0 0 2px; font-size: 15px; }
+  .section-head p { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
+  .card .value { font-size: 26px; font-weight: 600; }
+  .card .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .value.green { color: var(--green); } .value.yellow { color: var(--yellow); } .value.red { color: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: #472222; color: #ff8a8a; }
+  .pill.warning { background: #493a1a; color: var(--yellow); }
+  .pill.info { background: #1a3a49; color: var(--accent); }
+
+  /* alert / activator cards */
+  .alert-card {
+    display: flex; gap: 12px; background: var(--panel); border: 1px solid var(--border);
+    border-left: 4px solid var(--muted); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+  }
+  .alert-card.critical { border-left-color: var(--red); }
+  .alert-card.warning { border-left-color: var(--yellow); }
+  .alert-card .body { flex: 1; }
+  .alert-card .rule { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .alert-card .msg { font-size: 14px; margin-bottom: 6px; }
+  .alert-card .rec { font-size: 12.5px; color: #cfe0ee; }
+  .alert-card .rec b { color: var(--accent); }
+  .alert-card .status-tag { font-size: 11px; color: var(--muted); align-self: center; }
+  .alert-card .actions { display: flex; gap: 6px; align-self: center; }
+  .alert-card button.action {
+    background: var(--panel2); border: 1px solid #2a3b4d; color: var(--text); border-radius: 5px;
+    padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  .alert-card button.approve:hover { border-color: var(--green); color: var(--green); }
+  .alert-card button.dismiss:hover { border-color: var(--red); color: var(--red); }
+
+  .ticker { font-size: 12.5px; color: var(--yellow); padding: 5px 0; }
+  .arch-step { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: flex-start; }
+  .arch-step .num { width: 22px; height: 22px; border-radius: 50%; background: #1a3a49; color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
+  .arch-step .phase-tag { font-size: 10.5px; color: var(--muted); display:block; margin-top:2px; }
+  code.kql { display: block; white-space: pre-wrap; background: #0b1119; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 12px; color: #9fe6a0; margin-top: 8px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <h1>⚡ Northwind Grid</h1>
+    <span class="tag">Real-Time Intelligence reference demo &middot; local Fabric stand-in</span>
+    <div class="phase-badges" id="phaseBadges"></div>
+  </header>
+
+  <aside>
+    <h2>The story (S1 &rarr; S7)</h2>
+    <div id="storySteps"></div>
+
+    <div class="sim-controls">
+      <h2>Simulation</h2>
+      <div class="row">
+        <button class="action primary" id="btnStart">▶ Start</button>
+        <button class="action" id="btnPause">⏸ Pause</button>
+      </div>
+      <div class="row">
+        <select id="speedSel">
+          <option value="30">30x speed</option>
+          <option value="60" selected>60x speed</option>
+          <option value="120">120x speed</option>
+          <option value="600">600x speed</option>
+        </select>
+      </div>
+      <div class="row">
+        <input type="number" id="startHour" placeholder="start hour override (e.g. 16.5)" />
+      </div>
+      <span id="clockLabel"></span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="narrative-banner">
+      <div class="kicker" id="narrativeKicker">Scenario</div>
+      <div class="text" id="narrative">Loading…</div>
+    </div>
+
+    <nav id="tabs"></nav>
+
+    <section id="tab-overview" class="tab-panel active">
+      <div class="section-head"><h3>Phase 2 &middot; Grid overview</h3><p>Grid-wide supply vs. demand, correlated in real time and rolled up region &rarr; substation &rarr; feeder.</p></div>
+      <div class="grid" id="overviewCards"></div>
+      <div class="section-head"><h3>Alert ticker</h3><p>Latest Activator notifications across all regions.</p></div>
+      <div id="alertList"></div>
+    </section>
+
+    <section id="tab-generation" class="tab-panel">
+      <div class="section-head"><h3>Phase 1 &middot; Generation fleet</h3><p>Live telemetry from wind, solar, hydro, gas peakers, biomass and battery storage, enriched with ERP nameplate/asset metadata.</p></div>
+      <div class="grid" id="genCards"></div>
+      <table id="genTable"><thead><tr><th>Asset</th><th>Type</th><th>Region</th><th>MW</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="tab-consumption" class="tab-panel">
+      <div class="section-head"><h3>Phase 2 &middot; Consumption</h3><p>Meter telemetry enriched with CRM (rate class, critical-facility flag), aggregated by feeder.</p></div>
+      <div class="grid" id="consCards"></div>
+      <table id="feederTable"><thead><tr><th>Feeder</th><th>Region</th><th>Load MW</th><th>Loading %</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="tab-predictions" class="tab-panel">
+      <div class="section-head"><h3>Phase 3 &middot; Predictions</h3><p>Lightweight forecast models score 1h and 4h ahead. Dashed thresholds mirror the Microsoft Activator rules: 90% of available capacity, 15% forecast supply shortfall.</p></div>
+      <div class="grid" id="predCards"></div>
+    </section>
+
+    <section id="tab-activator" class="tab-panel">
+      <div class="section-head"><h3>Phase 4 &middot; Activator inbox</h3><p>Every rule fires a <b>recommendation</b>, never an automated control action. A human must Approve or Dismiss.</p></div>
+      <div id="activatorCards"></div>
+    </section>
+
+    <section id="tab-copilot" class="tab-panel">
+      <div class="section-head"><h3>Copilot / KQL</h3><p>Natural-language questions compiled into KQL-style filters against the live Eventhouse stand-in.</p></div>
+      <div class="controls" style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="nlQuery" placeholder="Show me all regions with predicted energy deficiencies during tomorrow's peak hours" style="flex:1;min-width:300px;background:var(--panel);border:1px solid #2a3b4d;color:var(--text);border-radius:5px;padding:8px 10px;font-size:13px;" />
+        <button class="action" id="btnAsk" style="background:var(--panel);border:1px solid #2a3b4d;color:var(--text);border-radius:5px;padding:8px 14px;cursor:pointer;">Ask</button>
+      </div>
+      <div id="canned" class="grid"></div>
+      <div id="queryResult"></div>
+    </section>
+
+    <section id="tab-architecture" class="tab-panel">
+      <div class="section-head"><h3>Architecture &middot; 4 phases, 11 steps</h3><p>This demo mirrors the Microsoft Fabric Energy Grid Management reference architecture 1:1 &mdash; live event counters below prove each step is actually running.</p></div>
+      <div class="grid" id="archCounters"></div>
+      <div id="archSteps"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const API = "http://" + location.hostname + ":8000";
+
+/* ---------------- story sidebar ---------------- */
+const STORY = [
+  {id:"S1", title:"Baseline day", sub:"Calm weekday, dashboard green.", tab:"overview"},
+  {id:"S2", title:"Evening peak 90%", sub:"Demand crosses 90% of capacity -> immediate alert.", tab:"activator"},
+  {id:"S3", title:"Deficit forecast 15%", sub:"Peak + wind lull -> proactive 4h shortfall warning.", tab:"predictions"},
+  {id:"S4", title:"Wind farm trip", sub:"Two turbines trip, frequency dips, redispatch recommended.", tab:"generation"},
+  {id:"S5", title:"Storm track", sub:"Feeder outages ripple Coastal -> Metro, crews recommended.", tab:"consumption"},
+  {id:"S6", title:"Solar ramp / cloud", sub:"Solar drops ~40% in 10 sim-minutes.", tab:"generation"},
+  {id:"S7", title:"Demand response accepted", sub:"Operator approves DR, reserve margin recovers.", tab:"activator"},
+];
+const storyEl = document.getElementById("storySteps");
+let currentScenario = "S1";
+let visited = new Set();
+
+function renderStory() {
+  storyEl.innerHTML = "";
+  STORY.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "story-step" + (s.id === currentScenario ? " active" : "") + (visited.has(s.id) ? " done" : "");
+    d.innerHTML = `<div class="num">${visited.has(s.id) && s.id !== currentScenario ? "✓" : (i+1)}</div>
+      <div><div class="title">${s.id} &middot; ${s.title}</div><div class="sub">${s.sub}</div></div>`;
+    d.onclick = () => injectScenario(s.id, s.tab);
+    storyEl.appendChild(d);
+  });
+}
+renderStory();
+
+function injectScenario(id, tab) {
+  const sh = document.getElementById("startHour").value;
+  const q = sh ? `?start_hour=${sh}` : "";
+  fetch(API+"/sim/scenario/"+id+q, {method:"POST"})
+    .then(r=>r.json())
+    .then(d => {
+      currentScenario = id;
+      visited.add(id);
+      renderStory();
+      if (tab) activateTab(tab);
+    });
+}
+
+/* ---------------- tabs ---------------- */
+const tabs = [
+  ["overview","Grid overview"],["generation","Generation"],["consumption","Consumption"],
+  ["predictions","Predictions"],["activator","Activator inbox"],["copilot","Copilot / KQL"],
+  ["architecture","Architecture"]
+];
+const tabsEl = document.getElementById("tabs");
+tabs.forEach(([id,label], i) => {
+  const b = document.createElement("button");
+  b.textContent = label; b.dataset.id = id;
+  if (i===0) b.classList.add("active");
+  b.onclick = () => activateTab(id);
+  tabsEl.appendChild(b);
+});
+function activateTab(id) {
+  document.querySelectorAll("nav#tabs button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));
+  document.querySelector(`nav#tabs button[data-id="${id}"]`).classList.add("active");
+  document.getElementById("tab-"+id).classList.add("active");
+}
+
+/* ---------------- phase badges ---------------- */
+const PHASES = ["1 Ingest","2 Enrich/Correlate","3 Predict","4 Activate/Visualize"];
+const phaseBadgesEl = document.getElementById("phaseBadges");
+PHASES.forEach(p => {
+  const s = document.createElement("span"); s.className = "phase-badge"; s.textContent = p;
+  phaseBadgesEl.appendChild(s);
+});
+
+const CANNED_Q = [
+  "Which feeders are above 80% loading right now?",
+  "Show wind farms whose output dropped more than 20% in 15 minutes",
+  "Critical customers on currently outaged feeders",
+  "Regions with predicted energy deficiencies during tonight's peak",
+  "Available peaker headroom vs reserve margin",
+];
+const cannedEl = document.getElementById("canned");
+CANNED_Q.forEach(q => {
+  const d = document.createElement("div"); d.className = "card";
+  d.style.cursor = "pointer";
+  d.innerHTML = `<div class="label">canned question</div><div style="font-size:13px">${q}</div>`;
+  d.onclick = () => { document.getElementById("nlQuery").value = q; ask(); };
+  cannedEl.appendChild(d);
+});
+
+document.getElementById("btnStart").onclick = () => fetch(API+"/sim/start", {method:"POST"});
+document.getElementById("btnPause").onclick = () => fetch(API+"/sim/pause", {method:"POST"});
+document.getElementById("speedSel").onchange = (e) =>
+  fetch(API+"/sim/speed", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({multiplier: parseFloat(e.target.value)})});
+document.getElementById("btnAsk").onclick = ask;
+function ask() {
+  const q = document.getElementById("nlQuery").value;
+  fetch(API+"/query?q="+encodeURIComponent(q)).then(r=>r.json()).then(d => {
+    document.getElementById("queryResult").innerHTML =
+      `<div class="card"><div class="label">matched intent</div><div>${d.matched_intent || "no match"}</div>` +
+      `<code class="kql">${(d.kql||"").replace(/</g,"&lt;")}</code>` +
+      `<div class="label" style="margin-top:8px;">result preview (${(d.result_preview||[]).length})</div>` +
+      `<pre style="font-size:11px;max-height:200px;overflow:auto;">${JSON.stringify(d.result_preview, null, 1)}</pre></div>`;
+  });
+}
+
+const ARCH_STEPS = [
+  ["1 Ingest", "Stream generation IoT (wind turbines & power plants)"],
+  ["1 Ingest", "Stream grid consumption events"],
+  ["1 Ingest", "CRM via MQTT / Eventstream"],
+  ["1 Ingest", "ERP via Data Factory / OneLake"],
+  ["2 Enrich", "Contextualize generation with ERP"],
+  ["2 Enrich", "Aggregate generation picture (grid → region → substation → feeder)"],
+  ["2 Enrich", "Contextualize consumption with CRM, correlate with generation"],
+  ["3 Predict", "Score ML models (deficiency, spike, renewable, stability)"],
+  ["4 Activate", "Activator notifications (recommended actions)"],
+  ["4 Activate", "Real-Time Dashboard drill-down"],
+  ["4 Activate", "Power BI-style business view"],
+];
+const archStepsEl = document.getElementById("archSteps");
+ARCH_STEPS.forEach(([phase, s],i) => {
+  const d = document.createElement("div"); d.className = "arch-step";
+  d.innerHTML = `<div class="num">${i+1}</div><div>${s}<span class="phase-tag">${phase}</span></div>`;
+  archStepsEl.appendChild(d);
+});
+
+function fmt(n, d=1) { return (typeof n === "number") ? n.toFixed(d) : "-"; }
+function severityClass(v) { return v>90?"red":(v>75?"yellow":"green"); }
+
+function renderSnapshot(s) {
+  if (s.scenario_id && s.scenario_id !== currentScenario) { currentScenario = s.scenario_id; visited.add(s.scenario_id); renderStory(); }
+  document.getElementById("clockLabel").textContent =
+    `${s.scenario_id} ${s.running ? "● RUNNING" : "❚❚ PAUSED"} — ${s.local_time || ""}`;
+  document.getElementById("narrativeKicker").textContent = `Scenario ${s.scenario_id} · ${s.scenario_name || ""}`;
+  document.getElementById("narrative").textContent = s.narrative || "Waiting for simulation to start…";
+
+  const g = s.grid_summary || {};
+  const pct = g.demand_pct_of_capacity || 0;
+  document.getElementById("overviewCards").innerHTML = `
+    <div class="card"><div class="label">Total demand</div><div class="value">${fmt(g.total_demand_mw)} MW</div><div class="hint">grid-wide, summed feeder → region → grid</div></div>
+    <div class="card"><div class="label">Total generation</div><div class="value">${fmt(g.total_generation_mw)} MW</div><div class="hint">wind + solar + hydro + peakers + BESS</div></div>
+    <div class="card"><div class="label">% of available capacity</div><div class="value ${severityClass(pct)}">${fmt(pct)}%</div><div class="hint">Activator fires above 90%</div></div>
+    <div class="card"><div class="label">Reserve margin</div><div class="value ${g.reserve_margin_pct<15?'red':(g.reserve_margin_pct<30?'yellow':'green')}">${fmt(g.reserve_margin_pct)}%</div><div class="hint">dispatchable + renewables + BESS vs demand</div></div>
+    <div class="card"><div class="label">Frequency proxy</div><div class="value">${fmt(g.frequency_hz,2)} Hz</div><div class="hint">nominal 60 Hz, drifts with imbalance</div></div>
+  `;
+  const alerts = (s.alerts||[]).slice().reverse();
+  document.getElementById("alertList").innerHTML = alerts.slice(0,15).map(a =>
+    `<div class="ticker"><span class="pill ${a.severity}">${a.severity}</span> ${a.message} — ${a.recommended_action} <em>(${a.status})</em></div>`
+  ).join("") || "<div class='empty'>No alerts yet — inject a scenario from the story sidebar to see Activator fire.</div>";
+
+  document.getElementById("activatorCards").innerHTML = alerts.map(a => `
+    <div class="alert-card ${a.severity}">
+      <div class="body">
+        <div class="rule"><span class="pill ${a.severity}">${a.severity}</span> ${a.rule_id} &middot; ${a.scope_type}:${a.scope_id}</div>
+        <div class="msg">${a.message}</div>
+        <div class="rec"><b>Recommended:</b> ${a.recommended_action} &middot; evidence: ${a.metric}=${fmt(a.value)} (threshold ${a.threshold})</div>
+      </div>
+      ${a.status==="open"
+        ? `<div class="actions"><button class="action approve" onclick="approve('${a.alert_id}')">✓ Approve</button><button class="action dismiss" onclick="dismiss('${a.alert_id}')">✕ Dismiss</button></div>`
+        : `<div class="status-tag">${a.status}</div>`}
+    </div>
+  `).join("") || "<div class='empty'>Inbox is empty. Try S2 (Evening peak 90%) from the story sidebar.</div>";
+
+  const p = s.predictions || [];
+  document.getElementById("predCards").innerHTML = p.map(pr => `
+    <div class="card"><div class="label">${pr.horizon_minutes} min horizon</div>
+      <div class="value ${pr.deficit_pct>=15?'red':(pr.deficit_pct>0?'yellow':'green')}">${fmt(pr.deficit_pct)}% deficit</div>
+      <div class="hint">demand ${fmt(pr.demand_mw_p50)} MW / gen ${fmt(pr.generation_mw_p50)} MW &middot; spike prob ${fmt(pr.spike_probability*100)}%</div>
+    </div>`).join("") || "<div class='empty'>No predictions yet — models score every 60 sim-seconds once the sim is running.</div>";
+
+  document.getElementById("genCards").innerHTML = `
+    <div class="card"><div class="label">Wind output</div><div class="value">${fmt(g.wind_output_mw)} MW</div></div>
+    <div class="card"><div class="label">Solar output</div><div class="value">${fmt(g.solar_output_mw)} MW</div></div>
+    <div class="card"><div class="label">Firm available (dispatchable)</div><div class="value">${fmt(g.firm_available_mw)} MW</div></div>
+  `;
+  document.getElementById("consCards").innerHTML = Object.entries(g.demand_by_region||{}).map(([r,v]) =>
+    `<div class="card"><div class="label">${r}</div><div class="value">${fmt(v)} MW</div></div>`).join("")
+    || "<div class='empty'>No regional data yet.</div>";
+}
+
+function approve(id) { fetch(API+"/actions/"+id+"/approve", {method:"POST"}); }
+function dismiss(id) { fetch(API+"/actions/"+id+"/dismiss", {method:"POST"}); }
+
+let evCounts = {};
+function connectWS() {
+  const ws = new WebSocket("ws://"+location.hostname+":8000/stream/events");
+  ws.onmessage = (m) => {
+    const d = JSON.parse(m.data);
+    evCounts[d.stream] = (evCounts[d.stream]||0) + 1;
+  };
+  ws.onclose = () => setTimeout(connectWS, 2000);
+}
+connectWS();
+
+function renderArchCounters() {
+  document.getElementById("archCounters").innerHTML = Object.entries(evCounts).map(([k,v]) =>
+    `<div class="card"><div class="label">${k}</div><div class="value">${v}</div><div class="hint">events this session</div></div>`
+  ).join("") || "<div class='empty'>Waiting for events… click Start in the sidebar.</div>";
+}
+
+async function poll() {
+  try {
+    const r = await fetch(API+"/grid/snapshot");
+    const s = await r.json();
+    renderSnapshot(s);
+  } catch (e) { /* server not up yet */ }
+  renderArchCounters();
+  setTimeout(poll, 1500);
+}
+poll();
+</script>
+</body>
+</html>

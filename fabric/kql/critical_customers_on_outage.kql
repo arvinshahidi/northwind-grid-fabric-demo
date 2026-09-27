@@ -1,0 +1,16 @@
+// critical_customers_on_outage.kql
+// Feeds Activator rule RULE-CRITICAL-OUTAGE: "Critical facility customers on
+// an outaged feeder" -> prioritize crew dispatch. Also answers the canned
+// Copilot question: "Critical customers on currently outaged feeders"
+
+let outaged_feeders = grid_telemetry
+    | where element_type == "feeder"
+    | summarize arg_max(event_time_utc, status) by element_id
+    | where status == "outage"
+    | project feeder_id = element_id;
+meter_telemetry
+| where last_gasp == true
+| join kind=inner crm_context on meter_id
+| join kind=inner outaged_feeders on feeder_id
+| where critical_facility == true
+| project meter_id, feeder_id, address, postal_code, event_time_utc

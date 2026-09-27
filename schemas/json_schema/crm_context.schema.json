@@ -1,0 +1,75 @@
+{
+  "properties": {
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "meter_id": {
+      "title": "Meter Id",
+      "type": "string"
+    },
+    "customer_id": {
+      "title": "Customer Id",
+      "type": "string"
+    },
+    "address": {
+      "title": "Address",
+      "type": "string"
+    },
+    "postal_code": {
+      "title": "Postal Code",
+      "type": "string"
+    },
+    "lat": {
+      "title": "Lat",
+      "type": "number"
+    },
+    "lon": {
+      "title": "Lon",
+      "type": "number"
+    },
+    "rate_class": {
+      "enum": [
+        "RES",
+        "COM",
+        "IND"
+      ],
+      "title": "Rate Class",
+      "type": "string"
+    },
+    "medical_baseline": {
+      "title": "Medical Baseline",
+      "type": "boolean"
+    },
+    "critical_facility": {
+      "title": "Critical Facility",
+      "type": "boolean"
+    },
+    "feeder_id": {
+      "title": "Feeder Id",
+      "type": "string"
+    },
+    "account_status": {
+      "default": "active",
+      "title": "Account Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_time_utc",
+    "meter_id",
+    "customer_id",
+    "address",
+    "postal_code",
+    "lat",
+    "lon",
+    "rate_class",
+    "medical_baseline",
+    "critical_facility",
+    "feeder_id"
+  ],
+  "title": "crm_context",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/crm_context.json"
+}

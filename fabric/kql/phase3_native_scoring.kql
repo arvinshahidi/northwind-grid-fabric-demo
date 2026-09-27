@@ -1,0 +1,128 @@
+// phase3_native_scoring.kql
+// PHASE 3 (native): "Score ML models" done inside Fabric with built-in KQL
+// time-series functions -- NOT by a local Python heuristic pushed in as a
+// pre-computed "predictions" stream. Run this once against your Eventhouse
+// after phase2_enrichment.kql. These functions are then called live by the
+// Real-Time Dashboard and by Activator rules.
+//
+// Microsoft step this feeds: 8 (score ML models).
+
+// ---------- current available capacity vs demand (feeds RULE-DEMAND-90) ----------
+
+.create-or-alter function with (folder = "northwind_grid/phase3") AvailableCapacityNow() {
+    let latest_gen_status = generation_telemetry
+        | summarize arg_max(event_time_utc, status) by asset_id;
+    let capacity_by_asset = latest_gen_status
+        | join kind=inner (
+            erp_assets
+            | summarize arg_max(as_of_utc, nameplate_mw, asset_type) by asset_id
+          ) on asset_id
+        | extend credited_mw = case(
+            status == "offline", 0.0,
+            asset_type in ("wind_turbine", "solar_farm"), nameplate_mw * 0.25,  // accredited capacity credit for variable renewables
+            nameplate_mw);
+    let available_capacity_mw = toscalar(capacity_by_asset | summarize sum(credited_mw));
+    let current_demand_mw = toscalar(
+        grid_telemetry
+        | where element_type == "substation"
+        | summarize arg_max(event_time_utc, load_mw) by element_id
+        | summarize sum(load_mw)
+    );
+    print available_capacity_mw = available_capacity_mw,
+          current_demand_mw = current_demand_mw,
+          demand_pct_of_capacity = current_demand_mw * 100.0 / available_capacity_mw
+}
+
+// ---------- forward-looking demand/generation forecast (feeds RULE-DEFICIT-15) ----------
+// Uses KQL's built-in series_decompose_forecast() -- a real Fabric/ADX
+// forecasting primitive, not an external model -- to project grid-wide
+// demand and generation forward by `horizonMinutes` and read off the
+// forecast value at exactly that horizon.
+
+.create-or-alter function with (folder = "northwind_grid/phase3") ForecastGridBalance(horizonMinutes: int) {
+    let bin_size = 5m;
+    let lookback = 90m;
+    let horizon_bins = horizonMinutes / 5;
+    let per_bin = grid_telemetry
+        | where element_type == "substation"
+        | where event_time_utc > ago(lookback)
+        | summarize load_mw = avg(load_mw), generation_in_mw = avg(generation_in_mw)
+            by element_id, bin(event_time_utc, bin_size)
+        | summarize demand_mw = sum(load_mw), gen_mw = sum(generation_in_mw) by event_time_utc;
+    per_bin
+    | make-series demand = avg(demand_mw) default = 0.0, gen = avg(gen_mw) default = 0.0
+        on event_time_utc from ago(lookback) to now() + horizon_bins * bin_size step bin_size
+    | extend forecast_demand = series_decompose_forecast(demand, horizon_bins, -1, 'avg')
+    | extend forecast_gen = series_decompose_forecast(gen, horizon_bins, -1, 'avg')
+    | project event_time_utc, forecast_demand, forecast_gen
+    | mv-expand event_time_utc to typeof(datetime), forecast_demand to typeof(real), forecast_gen to typeof(real)
+    | where event_time_utc > now()
+    | top 1 by event_time_utc desc  // the furthest-out projected point = the horizon target
+    | extend horizon_minutes = horizonMinutes,
+             deficit_mw = forecast_demand - forecast_gen,
+             deficit_pct = iif(forecast_demand > 0, (forecast_demand - forecast_gen) * 100.0 / forecast_demand, 0.0)
+    | project event_time_utc, horizon_minutes,
+              demand_mw_p50 = forecast_demand, generation_mw_p50 = forecast_gen,
+              deficit_mw, deficit_pct
+}
+
+// Quick smoke test once both functions exist:
+//   AvailableCapacityNow()
+//   ForecastGridBalance(60)
+//   ForecastGridBalance(240)
+
+// ---------- per-region forecast (answers "which regions have predicted
+// deficiencies") ----------
+// Same model as ForecastGridBalance() but grouped by region_id, so the
+// Data Agent / Copilot query box can answer "show me all regions with
+// predicted energy deficiencies" without hallucinating a breakdown that
+// doesn't exist.
+
+.create-or-alter function with (folder = "northwind_grid/phase3") ForecastGridBalanceByRegion(horizonMinutes: int) {
+    let bin_size = 5m;
+    let lookback = 90m;
+    let horizon_bins = horizonMinutes / 5;
+    let per_bin = grid_telemetry
+        | where element_type == "substation"
+        | where event_time_utc > ago(lookback)
+        | summarize load_mw = avg(load_mw), generation_in_mw = avg(generation_in_mw)
+            by element_id, region_id, bin(event_time_utc, bin_size)
+        | summarize demand_mw = sum(load_mw), gen_mw = sum(generation_in_mw) by region_id, event_time_utc;
+    per_bin
+    | make-series demand = avg(demand_mw) default = 0.0, gen = avg(gen_mw) default = 0.0
+        on event_time_utc from ago(lookback) to now() + horizon_bins * bin_size step bin_size
+        by region_id
+    | extend forecast_demand = series_decompose_forecast(demand, horizon_bins, -1, 'avg')
+    | extend forecast_gen = series_decompose_forecast(gen, horizon_bins, -1, 'avg')
+    | project region_id, event_time_utc, forecast_demand, forecast_gen
+    | mv-expand event_time_utc to typeof(datetime), forecast_demand to typeof(real), forecast_gen to typeof(real)
+    | where event_time_utc > now()
+    | summarize arg_max(event_time_utc, forecast_demand, forecast_gen) by region_id
+    | extend horizon_minutes = horizonMinutes,
+             deficit_mw = forecast_demand - forecast_gen,
+             deficit_pct = iif(forecast_demand > 0, (forecast_demand - forecast_gen) * 100.0 / forecast_demand, 0.0)
+    | project region_id, horizon_minutes,
+              demand_mw_p50 = forecast_demand, generation_mw_p50 = forecast_gen,
+              deficit_mw, deficit_pct
+    | order by deficit_pct desc
+}
+
+// Quick smoke test:
+//   ForecastGridBalanceByRegion(60)
+//   ForecastGridBalanceByRegion(240)
+
+// ---------- peaker headroom (answers the "available peaker headroom vs
+// reserve margin" Copilot question explicitly) ----------
+
+.create-or-alter function with (folder = "northwind_grid/phase3") PeakerHeadroomNow() {
+    let latest_peaker = generation_telemetry_enriched
+        | where asset_type == "gas_peaker"
+        | summarize arg_max(event_time_utc, status, nameplate_mw, active_power_mw) by asset_id;
+    let running_mw = toscalar(latest_peaker | where status == "running" | summarize sum(active_power_mw));
+    let nameplate_mw = toscalar(latest_peaker | summarize sum(nameplate_mw));
+    print running_mw = running_mw, nameplate_mw = nameplate_mw,
+          headroom_mw = nameplate_mw - running_mw
+}
+
+// Quick smoke test:
+//   PeakerHeadroomNow()

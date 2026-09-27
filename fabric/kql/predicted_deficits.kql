@@ -1,0 +1,19 @@
+// predicted_deficits.kql
+// Feeds Activator rule RULE-DEFICIT-15:
+//   "Forecast 15% supply shortfall during peak evening hours"
+// Also answers the canned Copilot question:
+//   "Regions with predicted energy deficiencies during tomorrow's peak hours"
+//
+// NATIVE scoring: calls the Fabric-side KQL forecast function
+// ForecastGridBalance() defined in phase3_native_scoring.kql (built on
+// series_decompose_forecast) -- no externally pre-computed "predictions"
+// stream required.
+
+union
+    (ForecastGridBalance(60)),
+    (ForecastGridBalance(240))
+| extend scope_type = "grid", scope_id = "GRID-NW"
+| where deficit_pct >= 15.0
+| project scope_type, scope_id, horizon_minutes, demand_mw_p50, generation_mw_p50,
+          deficit_mw, deficit_pct
+| order by deficit_pct desc

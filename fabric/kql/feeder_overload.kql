@@ -1,0 +1,12 @@
+// feeder_overload.kql
+// Feeds Activator rule RULE-FEEDER-OVERLOAD: "Feeder loading exceeds 90% of
+// thermal rating" -> recommend field crew inspection / load transfer.
+// Also answers the canned Copilot question:
+//   "Which feeders are above 80% loading right now?"
+
+grid_telemetry
+| where element_type == "feeder"
+| summarize arg_max(event_time_utc, loading_pct, load_mw, voltage_kv, status, region_id) by element_id
+| where loading_pct > 80
+| project element_id, region_id, loading_pct, load_mw, voltage_kv, status
+| order by loading_pct desc

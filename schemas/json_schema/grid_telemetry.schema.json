@@ -1,0 +1,80 @@
+{
+  "properties": {
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "event_time_local": {
+      "title": "Event Time Local",
+      "type": "string"
+    },
+    "element_id": {
+      "title": "Element Id",
+      "type": "string"
+    },
+    "element_type": {
+      "enum": [
+        "substation",
+        "feeder",
+        "tie_line"
+      ],
+      "title": "Element Type",
+      "type": "string"
+    },
+    "region_id": {
+      "title": "Region Id",
+      "type": "string"
+    },
+    "load_mw": {
+      "title": "Load Mw",
+      "type": "number"
+    },
+    "generation_in_mw": {
+      "title": "Generation In Mw",
+      "type": "number"
+    },
+    "loading_pct": {
+      "title": "Loading Pct",
+      "type": "number"
+    },
+    "voltage_kv": {
+      "title": "Voltage Kv",
+      "type": "number"
+    },
+    "frequency_hz": {
+      "title": "Frequency Hz",
+      "type": "number"
+    },
+    "unbalance_pct": {
+      "title": "Unbalance Pct",
+      "type": "number"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_time_utc",
+    "event_time_local",
+    "element_id",
+    "element_type",
+    "region_id",
+    "load_mw",
+    "generation_in_mw",
+    "loading_pct",
+    "voltage_kv",
+    "frequency_hz",
+    "unbalance_pct",
+    "status"
+  ],
+  "title": "grid_telemetry",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/grid_telemetry.json"
+}

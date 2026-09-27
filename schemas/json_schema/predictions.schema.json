@@ -1,0 +1,71 @@
+{
+  "properties": {
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "horizon_minutes": {
+      "title": "Horizon Minutes",
+      "type": "integer"
+    },
+    "scope_type": {
+      "enum": [
+        "grid",
+        "region",
+        "substation",
+        "feeder"
+      ],
+      "title": "Scope Type",
+      "type": "string"
+    },
+    "scope_id": {
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "demand_mw_p50": {
+      "title": "Demand Mw P50",
+      "type": "number"
+    },
+    "generation_mw_p50": {
+      "title": "Generation Mw P50",
+      "type": "number"
+    },
+    "deficit_mw": {
+      "title": "Deficit Mw",
+      "type": "number"
+    },
+    "deficit_pct": {
+      "title": "Deficit Pct",
+      "type": "number"
+    },
+    "reserve_margin_pct": {
+      "title": "Reserve Margin Pct",
+      "type": "number"
+    },
+    "spike_probability": {
+      "title": "Spike Probability",
+      "type": "number"
+    },
+    "model_version": {
+      "default": "heuristic-v1",
+      "title": "Model Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_time_utc",
+    "horizon_minutes",
+    "scope_type",
+    "scope_id",
+    "demand_mw_p50",
+    "generation_mw_p50",
+    "deficit_mw",
+    "deficit_pct",
+    "reserve_margin_pct",
+    "spike_probability"
+  ],
+  "title": "predictions",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/predictions.json"
+}

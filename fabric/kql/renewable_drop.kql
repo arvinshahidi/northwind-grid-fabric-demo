@@ -1,0 +1,21 @@
+// renewable_drop.kql
+// Feeds Activator rule RULE-RENEWABLE-DROP: "Renewable generation drop from
+// weather" -> emergency redispatch recommendation (load-shed only if reserve
+// margin breaches the hard threshold). Also answers the canned Copilot
+// question: "Show wind farms whose output dropped more than 20% in 15 minutes"
+
+let lookback = 15m;
+let now_slice = generation_telemetry
+    | where asset_type == "wind_turbine"
+    | summarize now_mw = sum(active_power_mw) by farm_or_plant_id,
+                bin(event_time_utc, 1m)
+    | summarize arg_max(event_time_utc, now_mw) by farm_or_plant_id;
+let baseline_slice = generation_telemetry
+    | where asset_type == "wind_turbine" and event_time_utc < ago(lookback)
+    | summarize baseline_mw = avg(active_power_mw) by farm_or_plant_id;
+now_slice
+| join kind=inner baseline_slice on farm_or_plant_id
+| extend drop_pct = (baseline_mw - now_mw) / baseline_mw * 100.0
+| where drop_pct > 20
+| project farm_or_plant_id, baseline_mw, now_mw, drop_pct
+| order by drop_pct desc

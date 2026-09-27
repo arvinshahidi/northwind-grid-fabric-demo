@@ -1,0 +1,4 @@
+# Optional extra: only needed if you're wiring the simulator to a real
+# Fabric Eventstream (fabric/connectors/eventstream_publisher.py).
+# Install with: pip install -r requirements-fabric.txt
+azure-eventhub>=5.11.0

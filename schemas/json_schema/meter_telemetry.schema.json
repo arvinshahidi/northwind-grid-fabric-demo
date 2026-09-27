@@ -1,0 +1,90 @@
+{
+  "properties": {
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "event_time_local": {
+      "title": "Event Time Local",
+      "type": "string"
+    },
+    "meter_id": {
+      "title": "Meter Id",
+      "type": "string"
+    },
+    "feeder_id": {
+      "title": "Feeder Id",
+      "type": "string"
+    },
+    "substation_id": {
+      "title": "Substation Id",
+      "type": "string"
+    },
+    "region_id": {
+      "title": "Region Id",
+      "type": "string"
+    },
+    "active_power_kw": {
+      "title": "Active Power Kw",
+      "type": "number"
+    },
+    "voltage_v": {
+      "title": "Voltage V",
+      "type": "number"
+    },
+    "current_a": {
+      "title": "Current A",
+      "type": "number"
+    },
+    "power_factor": {
+      "title": "Power Factor",
+      "type": "number"
+    },
+    "energy_kwh_delta": {
+      "title": "Energy Kwh Delta",
+      "type": "number"
+    },
+    "voltage_violation": {
+      "default": false,
+      "title": "Voltage Violation",
+      "type": "boolean"
+    },
+    "last_gasp": {
+      "default": false,
+      "title": "Last Gasp",
+      "type": "boolean"
+    },
+    "restoration": {
+      "default": false,
+      "title": "Restoration",
+      "type": "boolean"
+    },
+    "quality_flag": {
+      "default": "good",
+      "title": "Quality Flag",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_time_utc",
+    "event_time_local",
+    "meter_id",
+    "feeder_id",
+    "substation_id",
+    "region_id",
+    "active_power_kw",
+    "voltage_v",
+    "current_a",
+    "power_factor",
+    "energy_kwh_delta"
+  ],
+  "title": "meter_telemetry",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/meter_telemetry.json"
+}

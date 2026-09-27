@@ -1,0 +1,76 @@
+{
+  "rules": [
+    {
+      "rule_id": "RULE-DEMAND-90",
+      "description": "Demand exceeds 90% of available capacity",
+      "source_query": "demand_vs_capacity.kql -> AvailableCapacityNow() (native KQL, computed live from ERP nameplate + generator on/off status + current substation load)",
+      "metric": "demand_pct_of_capacity",
+      "threshold": 90.0,
+      "comparison": ">",
+      "severity": "critical",
+      "scope_type": "grid",
+      "action": "Recommend: start additional peakers, discharge BESS, initiate commercial demand response.",
+      "human_approval_required": true
+    },
+    {
+      "rule_id": "RULE-DEFICIT-15",
+      "description": "Forecast 15% supply shortfall during peak evening hours",
+      "source_query": "predicted_deficits.kql -> ForecastGridBalance(240) (native KQL forecast via series_decompose_forecast, defined in phase3_native_scoring.kql)",
+      "metric": "deficit_pct",
+      "threshold": 15.0,
+      "comparison": ">=",
+      "severity": "warning",
+      "scope_type": "region_or_grid",
+      "action": "Recommend: schedule additional generation and/or a demand-response event ahead of peak.",
+      "human_approval_required": true
+    },
+    {
+      "rule_id": "RULE-RENEWABLE-DROP",
+      "description": "Renewable generation drop from weather",
+      "source_query": "renewable_drop.kql",
+      "metric": "wind_output_drop_pct",
+      "threshold": 20.0,
+      "comparison": ">=",
+      "severity": "critical",
+      "scope_type": "asset",
+      "action": "Recommend: emergency redispatch; evaluate load-shed only if reserve margin breaches the hard threshold.",
+      "human_approval_required": true
+    },
+    {
+      "rule_id": "RULE-REDISTRIBUTE",
+      "description": "Redistribute from surplus region to deficit region",
+      "source_query": "live_balance.kql grouped by region_id, gated on grid-wide stress",
+      "metric": "region_imbalance_mw",
+      "threshold": 40.0,
+      "comparison": ">",
+      "severity": "warning",
+      "scope_type": "grid",
+      "action": "Recommend: schedule inter-region transfer / redispatch from surplus region.",
+      "human_approval_required": true
+    },
+    {
+      "rule_id": "RULE-FEEDER-OVERLOAD",
+      "description": "Feeder loading exceeds 90% of thermal rating",
+      "source_query": "feeder_overload.kql",
+      "metric": "loading_pct",
+      "threshold": 90.0,
+      "comparison": ">",
+      "severity": "warning",
+      "scope_type": "feeder",
+      "action": "Recommend: field crew inspection and/or feeder load transfer.",
+      "human_approval_required": true
+    },
+    {
+      "rule_id": "RULE-CRITICAL-OUTAGE",
+      "description": "Critical facility customers on an outaged feeder",
+      "source_query": "critical_customers_on_outage.kql",
+      "metric": "critical_customers_affected",
+      "threshold": 0,
+      "comparison": ">",
+      "severity": "critical",
+      "scope_type": "grid",
+      "action": "Recommend: prioritize crew dispatch to restore feeder serving critical/medical customers.",
+      "human_approval_required": true
+    }
+  ]
+}

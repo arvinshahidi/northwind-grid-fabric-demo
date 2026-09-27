@@ -1,0 +1,140 @@
+{
+  "properties": {
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "event_time_local": {
+      "title": "Event Time Local",
+      "type": "string"
+    },
+    "asset_id": {
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "asset_type": {
+      "enum": [
+        "wind_turbine",
+        "solar_farm",
+        "gas_peaker",
+        "hydro",
+        "bess",
+        "biomass"
+      ],
+      "title": "Asset Type",
+      "type": "string"
+    },
+    "farm_or_plant_id": {
+      "title": "Farm Or Plant Id",
+      "type": "string"
+    },
+    "region_id": {
+      "title": "Region Id",
+      "type": "string"
+    },
+    "substation_id": {
+      "title": "Substation Id",
+      "type": "string"
+    },
+    "active_power_mw": {
+      "title": "Active Power Mw",
+      "type": "number"
+    },
+    "reactive_power_mvar": {
+      "title": "Reactive Power Mvar",
+      "type": "number"
+    },
+    "voltage_kv": {
+      "title": "Voltage Kv",
+      "type": "number"
+    },
+    "frequency_hz": {
+      "title": "Frequency Hz",
+      "type": "number"
+    },
+    "availability_pct": {
+      "title": "Availability Pct",
+      "type": "number"
+    },
+    "status": {
+      "enum": [
+        "running",
+        "derated",
+        "offline",
+        "starting"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "wind_speed_ms": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Wind Speed Ms"
+    },
+    "irradiance_wm2": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Irradiance Wm2"
+    },
+    "soc_pct": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Soc Pct"
+    },
+    "curtailment_mw": {
+      "default": 0.0,
+      "title": "Curtailment Mw",
+      "type": "number"
+    },
+    "setpoint_mw": {
+      "title": "Setpoint Mw",
+      "type": "number"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_time_utc",
+    "event_time_local",
+    "asset_id",
+    "asset_type",
+    "farm_or_plant_id",
+    "region_id",
+    "substation_id",
+    "active_power_mw",
+    "reactive_power_mvar",
+    "voltage_kv",
+    "frequency_hz",
+    "availability_pct",
+    "status",
+    "setpoint_mw"
+  ],
+  "title": "generation_telemetry",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/generation_telemetry.json"
+}

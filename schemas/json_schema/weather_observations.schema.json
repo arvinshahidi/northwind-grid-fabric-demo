@@ -1,0 +1,62 @@
+{
+  "properties": {
+    "event_time_utc": {
+      "title": "Event Time Utc",
+      "type": "string"
+    },
+    "region_id": {
+      "title": "Region Id",
+      "type": "string"
+    },
+    "temp_c": {
+      "title": "Temp C",
+      "type": "number"
+    },
+    "wind_speed_ms": {
+      "title": "Wind Speed Ms",
+      "type": "number"
+    },
+    "wind_dir_deg": {
+      "title": "Wind Dir Deg",
+      "type": "number"
+    },
+    "ghi_wm2": {
+      "title": "Ghi Wm2",
+      "type": "number"
+    },
+    "cloud_cover_pct": {
+      "title": "Cloud Cover Pct",
+      "type": "number"
+    },
+    "precip_mm_h": {
+      "title": "Precip Mm H",
+      "type": "number"
+    },
+    "alert": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Alert"
+    }
+  },
+  "required": [
+    "event_time_utc",
+    "region_id",
+    "temp_c",
+    "wind_speed_ms",
+    "wind_dir_deg",
+    "ghi_wm2",
+    "cloud_cover_pct",
+    "precip_mm_h"
+  ],
+  "title": "weather_observations",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northwindgrid.example/schemas/weather_observations.json"
+}
