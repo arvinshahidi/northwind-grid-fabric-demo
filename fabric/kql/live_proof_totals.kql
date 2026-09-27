@@ -1,0 +1,15 @@
+// live_proof_totals.kql
+// "How much grid is actually running right now?" stat tile for the
+// Real-Time Dashboard. De-duplicates per substation (avg per element per
+// bin, see live_balance.kql for why -- raw-tick sums double-count) then
+// sums to a single grid-wide total load and generation figure, alongside
+// how many substations are actively reporting.
+
+let window = 2m;
+grid_telemetry
+| where event_time_utc > ago(window)
+| where element_type == "substation"
+| summarize load_mw = avg(load_mw), gen_mw = avg(generation_in_mw) by element_id
+| summarize total_load_mw = round(sum(load_mw), 1),
+            total_gen_mw = round(sum(gen_mw), 1),
+            substations_reporting = dcount(element_id)

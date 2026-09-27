@@ -1,0 +1,13 @@
+// live_proof_ingest.kql
+// "Is this actually live?" stat tile for the Real-Time Dashboard.
+// Counts raw telemetry events landing across the streaming tables in the
+// last 5 minutes and how many seconds ago the freshest event arrived.
+// A non-zero event count with a low freshness number is the simplest
+// possible proof-of-life for a skeptical operator watching the demo.
+
+union withsource=SourceTable
+    generation_telemetry, grid_telemetry, meter_telemetry, weather_observations
+| where event_time_utc > ago(5m)
+| summarize events_last_5min = count(),
+            latest_event_utc = max(event_time_utc)
+| extend seconds_since_last_event = datetime_diff('second', now(), latest_event_utc)

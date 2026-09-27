@@ -170,9 +170,19 @@ two -- and you can point to the exact KQL query that detected it.
    - `renewable_drop.kql` -> wind farm output trend tile
    - `predicted_deficits.kql` -> 1h/4h deficit chart tile
    - `critical_customers_on_outage.kql` -> critical-customer outage table
-3. Arrange tiles to mirror the drill-down story: grid overview -> region ->
+   - `live_proof_ingest.kql` -> **stat tile**: events ingested in the last
+     5 min + seconds since the last event (proves the pipeline is live,
+     not a static screenshot)
+   - `live_proof_totals.kql` -> **stat tile**: total system load MW, total
+     generation MW, and substations currently reporting
+3. For the two `live_proof_*` tiles, use the **"Stat"** (or "Card") visual
+   type instead of a time chart -- each query returns a single row, so pin
+   individual columns (e.g. `events_last_5min`, `total_gen_mw`) as big
+   numbers near the top of the dashboard. These are the tiles to point at
+   first when someone asks "is this actually live data?"
+4. Arrange tiles to mirror the drill-down story: grid overview -> region ->
    substation -> feeder -> meter/asset (Microsoft step 10).
-4. From the Eventhouse database, use **"Create Power BI report"** (Direct
+5. From the Eventhouse database, use **"Create Power BI report"** (Direct
    Lake mode) to build the executive/business view (Microsoft step 11) --
    same live numbers, no separate copy/import step.
 
