@@ -189,13 +189,21 @@ def build_generators(substations, feeders):
     inland_subs = [s for s in substations if s.region_id == "REG-INLAND"]
     all_subs = substations
 
-    def add(asset_type, count, home_subs, rating_range, farm_size=1, name_prefix="", oem_pool=None):
+    def add(asset_type, count, home_subs, rating_range, farm_size=1, name_prefix="", oem_pool=None,
+            farm_home_subs=None):
+        # farm_home_subs: optional list of per-farm substation pools, so farm
+        # N is deterministically placed in farm_home_subs[N-1] instead of a
+        # random pick across all of home_subs. Used to spread wind farms
+        # across regions (Coastal/Metro/Inland) so the spatial wind-front
+        # delay (see simulator/weather.py FRONT_DELAY_MIN) is actually
+        # visible farm-to-farm instead of all farms sharing one region.
         made = 0
         farm_idx = 0
         while made < count:
             farm_idx += 1
             this_farm = min(farm_size, count - made)
-            sub = rng.choice(home_subs)
+            subs_pool = farm_home_subs[(farm_idx - 1) % len(farm_home_subs)] if farm_home_subs else home_subs
+            sub = rng.choice(subs_pool)
             farm_id = f"{name_prefix}-FARM-{farm_idx:02d}" if farm_size > 1 else None
             base_lat, base_lon = _rand_latlon(
                 next(r["lon_span"] for r in REGIONS if r["region_id"] == sub.region_id)
@@ -225,7 +233,11 @@ def build_generators(substations, feeders):
             made += this_farm
         return gens
 
-    add("wind_turbine", 18, coastal_subs, (2.5, 4.5), farm_size=6, name_prefix="WIND", oem_pool=["Vestas", "GE Renewables", "Siemens Gamesa"])
+    # 3 farms, one per region, so WIND-FARM-01/02/03 map 1:1 onto
+    # Coastal/Metro/Inland and pick up FRONT_DELAY_MIN's 0/25/55-minute
+    # spatial lag instead of all three farms reading identical regional wind.
+    add("wind_turbine", 18, coastal_subs, (2.5, 4.5), farm_size=6, name_prefix="WIND", oem_pool=["Vestas", "GE Renewables", "Siemens Gamesa"],
+        farm_home_subs=[coastal_subs, metro_subs, inland_subs])
     add("solar_farm", 8, all_subs, (15, 25), farm_size=1, name_prefix="SOLAR", oem_pool=["First Solar", "GE Renewables"])
     add("gas_peaker", 6, metro_subs, (80, 120), farm_size=1, name_prefix="GASPK", oem_pool=["GE Renewables", "Siemens Gamesa"])
     add("hydro", 4, inland_subs, (45, 75), farm_size=1, name_prefix="HYDRO", oem_pool=["Andritz Hydro"])
